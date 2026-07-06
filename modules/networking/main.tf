@@ -91,6 +91,30 @@ resource "azurerm_network_security_group" "aks_nodes" {
     destination_address_prefix = "*"
   }
 
+  security_rule {
+    name                       = "AllowInternetInboundHTTP"
+    priority                   = 115
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "80"
+    source_address_prefix      = "Internet"
+    destination_address_prefix = "*"
+  }
+
+  security_rule {
+    name                       = "AllowInternetInboundNodePorts"
+    priority                   = 120
+    direction                  = "Inbound"
+    access                     = "Allow"
+    protocol                   = "Tcp"
+    source_port_range          = "*"
+    destination_port_range     = "30000-32767"
+    source_address_prefix      = "Internet"
+    destination_address_prefix = "*"
+  }
+
   # Regla: bloquear todo el tráfico externo no autorizado
   security_rule {
     name                       = "DenyAllInbound"

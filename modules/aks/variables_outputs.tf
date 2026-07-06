@@ -50,16 +50,16 @@ output "oidc_issuer_url" {
   value       = azurerm_kubernetes_cluster.main.oidc_issuer_url
 }
 
-output "appgw_public_ip" {
-  value = azurerm_public_ip.appgw.ip_address
-}
+# output "appgw_public_ip" {
+#   value = azurerm_public_ip.appgw.ip_address
+# }
 
-output "appgw_public_ip_fqdn" {
-  description = "FQDN automático de Azure para la IP pública del ingress"
-  value       = azurerm_public_ip.appgw.fqdn
-}
+# output "appgw_public_ip_fqdn" {
+#   description = "FQDN automático de Azure para la IP pública del ingress"
+#   value       = azurerm_public_ip.appgw.fqdn
+# }
 
-output "appgw_id" { value = azurerm_application_gateway.main.id }
+# output "appgw_id" { value = azurerm_application_gateway.main.id }
 
 output "kube_config" {
   value     = azurerm_kubernetes_cluster.main.kube_config_raw

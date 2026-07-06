@@ -7,19 +7,19 @@
 # IP Pública para el Ingress (Application Gateway o NGINX)
 # Se usa dominio público mediante esta IP estática
 # -----------------------------------------------------------------------------
-resource "azurerm_public_ip" "appgw" {
-  name                = "pip-appgw-${var.project}-${var.environment}"
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  allocation_method   = "Static"
-  sku                 = "Standard"         # Standard requerido para zonas y AGIC
-  zones               = var.availability_zones
+# resource "azurerm_public_ip" "appgw" {
+#   name                = "pip-appgw-${var.project}-${var.environment}"
+#   resource_group_name = var.resource_group_name
+#   location            = var.location
+#   allocation_method   = "Static"
+#   sku                 = "Standard"         # Standard requerido para zonas y AGIC
+#   zones               = var.availability_zones
 
-  # El FQDN de esta IP puede usarse como registro DNS tipo A o CNAME
-  domain_name_label = "${var.project}-${var.environment}-ingress"
+#   # El FQDN de esta IP puede usarse como registro DNS tipo A o CNAME
+#   domain_name_label = "${var.project}-${var.environment}-ingress"
 
-  tags = var.tags
-}
+#   tags = var.tags
+# }
 
 # resource "azurerm_web_application_firewall_policy" "agw_waf" {
 #   name                = "waf-${var.project}-${var.environment}-${var.location_short}"
@@ -38,103 +38,103 @@ resource "azurerm_public_ip" "appgw" {
 # Application Gateway v2 (Ingress para dominio público)
 # Compatible con AGIC (Application Gateway Ingress Controller)
 # -----------------------------------------------------------------------------
-resource "azurerm_application_gateway" "main" {
-  name                = "agw-${var.project}-${var.environment}-${var.location_short}"
-  resource_group_name = var.resource_group_name
-  location            = var.location
-  zones               = var.availability_zones   # HA en 3 zonas
-  # firewall_policy_id  = azurerm_web_application_firewall_policy.agw_waf.id
+# resource "azurerm_application_gateway" "main" {
+#   name                = "agw-${var.project}-${var.environment}-${var.location_short}"
+#   resource_group_name = var.resource_group_name
+#   location            = var.location
+#   zones               = var.availability_zones   # HA en 3 zonas
+#   # firewall_policy_id  = azurerm_web_application_firewall_policy.agw_waf.id
 
-  sku {
-    name = "Standard_v2" #"WAF_v2"    # WAF incluido para protección de capa 7
-    tier = "Standard_v2" #"WAF_v2"     # Mínimo recomendado; el autoscale se configura abajo
-  }
+#   sku {
+#     name = "Standard_v2" #"WAF_v2"    # WAF incluido para protección de capa 7
+#     tier = "Standard_v2" #"WAF_v2"     # Mínimo recomendado; el autoscale se configura abajo
+#   }
 
-  # Autoscaling del Application Gateway
-  autoscale_configuration {
-    min_capacity = 2
-    max_capacity = 4
-  }
+#   # Autoscaling del Application Gateway
+#   autoscale_configuration {
+#     min_capacity = 2
+#     max_capacity = 4
+#   }
 
-  ssl_policy {
-    policy_type = "Predefined"
-    policy_name = "AppGwSslPolicy20170401S"
-  }
+#   ssl_policy {
+#     policy_type = "Predefined"
+#     policy_name = "AppGwSslPolicy20170401S"
+#   }
 
-  gateway_ip_configuration {
-    name      = "appgw-ip-config"
-    subnet_id = var.appgw_subnet_id
-  }
+#   gateway_ip_configuration {
+#     name      = "appgw-ip-config"
+#     subnet_id = var.appgw_subnet_id
+#   }
 
-  # Frontend IP pública
-  frontend_ip_configuration {
-    name                 = "appgw-frontend-public"
-    public_ip_address_id = azurerm_public_ip.appgw.id
-  }
+#   # Frontend IP pública
+#   frontend_ip_configuration {
+#     name                 = "appgw-frontend-public"
+#     public_ip_address_id = azurerm_public_ip.appgw.id
+#   }
 
-  # Puerto HTTP (AGIC crea los listeners dinámicamente, estos son los base)
-  frontend_port {
-    name = "port-80"
-    port = 80
-  }
+#   # Puerto HTTP (AGIC crea los listeners dinámicamente, estos son los base)
+#   frontend_port {
+#     name = "port-80"
+#     port = 80
+#   }
 
-  frontend_port {
-    name = "port-443"
-    port = 443
-  }
+#   frontend_port {
+#     name = "port-443"
+#     port = 443
+#   }
 
-  # Backend pool vacío - AGIC lo gestiona dinámicamente
-  backend_address_pool {
-    name = "appgw-backend-pool"
-  }
+#   # Backend pool vacío - AGIC lo gestiona dinámicamente
+#   backend_address_pool {
+#     name = "appgw-backend-pool"
+#   }
 
-  backend_http_settings {
-    name                  = "appgw-backend-http"
-    cookie_based_affinity = "Disabled"
-    port                  = 80
-    protocol              = "Http"
-    request_timeout       = 60
-  }
+#   backend_http_settings {
+#     name                  = "appgw-backend-http"
+#     cookie_based_affinity = "Disabled"
+#     port                  = 80
+#     protocol              = "Http"
+#     request_timeout       = 60
+#   }
 
-  http_listener {
-    name                           = "appgw-listener-http"
-    frontend_ip_configuration_name = "appgw-frontend-public"
-    frontend_port_name             = "port-80"
-    protocol                       = "Http"
-  }
+#   http_listener {
+#     name                           = "appgw-listener-http"
+#     frontend_ip_configuration_name = "appgw-frontend-public"
+#     frontend_port_name             = "port-80"
+#     protocol                       = "Http"
+#   }
 
-  request_routing_rule {
-    name                       = "appgw-routing-rule"
-    rule_type                  = "Basic"
-    priority                   = 100
-    http_listener_name         = "appgw-listener-http"
-    backend_address_pool_name  = "appgw-backend-pool"
-    backend_http_settings_name = "appgw-backend-http"
-  }
+#   request_routing_rule {
+#     name                       = "appgw-routing-rule"
+#     rule_type                  = "Basic"
+#     priority                   = 100
+#     http_listener_name         = "appgw-listener-http"
+#     backend_address_pool_name  = "appgw-backend-pool"
+#     backend_http_settings_name = "appgw-backend-http"
+#   }
 
-  # Identidad gestionada para que AGIC lea secrets (TLS desde Key Vault)
-  #identity {
-  #  type         = "SystemAssigned" # "UserAssigned"
-    #identity_ids = [azurerm_user_assigned_identity.agic.id]
-  #}
+#   # Identidad gestionada para que AGIC lea secrets (TLS desde Key Vault)
+#   #identity {
+#   #  type         = "SystemAssigned" # "UserAssigned"
+#     #identity_ids = [azurerm_user_assigned_identity.agic.id]
+#   #}
 
-  tags = var.tags
+#   tags = var.tags
 
-  lifecycle {
-    # AGIC modifica el Application Gateway; ignorar cambios para evitar drift
-    ignore_changes = [
-      backend_address_pool,
-      backend_http_settings,
-      frontend_port,
-      http_listener,
-      probe,
-      redirect_configuration,
-      request_routing_rule,
-      ssl_certificate,
-      tags["managed-by-k8s-ingress"],
-    ]
-  }
-}
+#   lifecycle {
+#     # AGIC modifica el Application Gateway; ignorar cambios para evitar drift
+#     ignore_changes = [
+#       backend_address_pool,
+#       backend_http_settings,
+#       frontend_port,
+#       http_listener,
+#       probe,
+#       redirect_configuration,
+#       request_routing_rule,
+#       ssl_certificate,
+#       tags["managed-by-k8s-ingress"],
+#     ]
+#   }
+# }
 
 # -----------------------------------------------------------------------------
 # Identidad de AGIC
@@ -144,27 +144,27 @@ resource "azurerm_application_gateway" "main" {
 # Contributor sobre el Application Gateway y Reader sobre su Resource Group;
 # AKS no asigna estos roles por sí mismo, hay que crearlos explícitamente.
 
-resource "azurerm_role_assignment" "agic_appgw_contributor" {
-  scope                = azurerm_application_gateway.main.id
-  role_definition_name = "Contributor"
-  principal_id         = azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
-}
+# resource "azurerm_role_assignment" "agic_appgw_contributor" {
+#   scope                = azurerm_application_gateway.main.id
+#   role_definition_name = "Contributor"
+#   principal_id         = azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
+# }
 
-resource "azurerm_role_assignment" "agic_rg_reader" {
-  scope                = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
-  role_definition_name = "Reader"
-  principal_id         = azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
-}
+# resource "azurerm_role_assignment" "agic_rg_reader" {
+#   scope                = "/subscriptions/${data.azurerm_subscription.current.subscription_id}/resourceGroups/${var.resource_group_name}"
+#   role_definition_name = "Reader"
+#   principal_id         = azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
+# }
 
-# Network Contributor sobre la subnet del Application Gateway: requerido para
-# el permiso "Microsoft.Network/virtualNetworks/subnets/join/action" que Azure
-# exige en cada CreateOrUpdate del AGW. Sin este rol, AGIC falla con
-# "ApplicationGatewayInsufficientPermissionOnSubnet" al sincronizar el Ingress.
-resource "azurerm_role_assignment" "agic_appgw_subnet_join" {
-  scope                = var.appgw_subnet_id
-  role_definition_name = "Network Contributor"
-  principal_id         = azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
-}
+# # Network Contributor sobre la subnet del Application Gateway: requerido para
+# # el permiso "Microsoft.Network/virtualNetworks/subnets/join/action" que Azure
+# # exige en cada CreateOrUpdate del AGW. Sin este rol, AGIC falla con
+# # "ApplicationGatewayInsufficientPermissionOnSubnet" al sincronizar el Ingress.
+# resource "azurerm_role_assignment" "agic_appgw_subnet_join" {
+#   scope                = var.appgw_subnet_id
+#   role_definition_name = "Network Contributor"
+#   principal_id         = azurerm_kubernetes_cluster.main.ingress_application_gateway[0].ingress_application_gateway_identity[0].object_id
+# }
 
 # -----------------------------------------------------------------------------
 # Data sources
@@ -277,9 +277,9 @@ resource "azurerm_kubernetes_cluster" "main" {
   # ===========================================================================
 
   # AGIC: Application Gateway Ingress Controller (dominio público)
-  ingress_application_gateway {
-    gateway_id = azurerm_application_gateway.main.id
-  }
+  # ingress_application_gateway {
+  #   gateway_id = azurerm_application_gateway.main.id
+  # }
 
   # Azure Monitor / Container Insights
   # oms_agent {
